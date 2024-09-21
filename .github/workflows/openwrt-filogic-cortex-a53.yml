@@ -33,17 +33,17 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
 
-    - name: Clone source code
+    - name: Prepare work
       working-directory: /workdir
       run: |
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
+        mv $GITHUB_WORKSPACE/$PATCH_DIR $GITHUB_WORKSPACE/openwrt
+        mv $GITHUB_WORKSPACE/$PATCH_SCRIPT $GITHUB_WORKSPACE/openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Patch openwrt
       run: |
-        mv $GITHUB_WORKSPACE/$PATCH_DIR $GITHUB_WORKSPACE/openwrt
-        mv $GITHUB_WORKSPACE/$PATCH_SCRIPT $GITHUB_WORKSPACE/openwrt
         cd $GITHUB_WORKSPACE/openwrt
         chmod +x $PATCH_SCRIPT
         $GITHUB_WORKSPACE/$PATCH_SCRIPT

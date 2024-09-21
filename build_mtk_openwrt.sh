@@ -1,5 +1,7 @@
 #! /bin/bash
 
+git clone --depth=1 https://github.com/openwrt/openwrt.git
+
 sed -i 's/git.openwrt.org\/feed/github.com\/openwrt/g' ./feeds.conf.default
 sed -i 's/git.openwrt.org\/project/github.com\/openwrt/g' ./feeds.conf.default
 
@@ -24,7 +26,6 @@ sed -i 's/# CONFIG_HZ_250 is not set/CONFIG_HZ_250=y/' ./target/linux/generic/co
 sed -i 's/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/' ./target/linux/generic/config-6.6
 sed -i 's/CONFIG_HZ=100/CONFIG_HZ=250/' ./target/linux/generic/config-6.6
 sed -i 's/# CONFIG_DEBUG_INFO_REDUCED is not set/CONFIG_DEBUG_INFO_REDUCED=y/' ./target/linux/generic/config-6.6
-
 
 for i in $(ls mtk_patch)
 do
