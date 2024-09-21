@@ -1,0 +1,120 @@
+name: Build tplink_tl-xdr6086
+
+on:
+  schedule:
+    - cron: 0 2 * * FRI
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+        - true
+        - false
+      version:
+        description: 'OpenWrt version'
+        required: true
+        default: 'snapshot'
+        type: string
+
+env:
+  REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
+  REPO_BRANCH: master
+  BUILDROOT: ${{ github.workspace }}/openwrt
+  CUSTOM_SCRIPT: ${{ github.workspace }}/build_mtk_openwrt.sh
+  CUSTOM_DIR: ${{ github.workspace }}/mtk_patch
+  OPENWRT_DEVICE_MODEL: tplink_tl-xdr6086
+  TZ: UTC
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get -qq update && sudo apt-get -qq upgrade
+        sudo apt-get -qq install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-setuptools rsync swig unzip zlib1g-dev file wget
+        sudo apt-get -qq autoremove --purge
+        sudo apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+
+    - name: Maximize build disk space
+      uses: easimon/maximize-build-space@master
+      with:
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Set default target
+      run: |
+        sed -i "s/openwrt_device_model_config/$OPENWRT_DEVICE_MODEL/" ${{ github.workspace }}/mtk_patch/0002-set-default-target.patch
+
+    - name: Download the sources
+      run: git clone --branch $REPO_BRANCH $REPO_URL
+
+    - name: Auto select a specific code revision
+      id: autoselect
+      if: github.event.client_payload.version == 'stable'
+      run: |
+        cd $BUILDROOT && git checkout $(git tag --sort=-creatordate | head -n1)
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Manual select a specific code revision
+      id: manualselect
+      if: github.event.inputs.version != 'snapshot'
+      run: |
+        cd $BUILDROOT && git checkout ${{ github.event.inputs.version }}
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Load custom
+      run: |
+        chmod +x *.sh
+        $CUSTOM_SCRIPT
+        $BUILDROOT/scripts/feeds update -a && $BUILDROOT/scripts/feeds install -a
+
+    - name: Start SSH via tmate
+      uses: rdp-studio/ssh2actions@main
+      if: github.event.inputs.ssh == 'true'
+
+    - name: Build the firmware image
+      id: compile
+      run: |
+        cd $BUILDROOT && echo "$(($(nproc)+1)) thread compile"
+        IGNORE_ERRORS=m make -j$(($(nproc)+1)) defconfig download clean world || IGNORE_ERRORS=m make -j1 defconfig download clean world V=s
+
+    - name: Organize files
+      run: |
+        tar -zcvf All_Packages.tar.gz $BUILDROOT/bin/packages
+        tar -zcvf All_Firmwares.tar.gz $BUILDROOT/bin/targets
+
+    - name: Generate snapshot Release Tag
+      id: snapshottag
+      run: |
+        echo "release_tag=SNAPSHOT_$(date +"%Y-%m-%d")" >> $GITHUB_OUTPUT
+
+    - name: Upload snapshot firmware to Release
+      uses: softprops/action-gh-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.OPENWRT_DEVICE_MODEL }}-${{ steps.snapshottag.outputs.release_tag }}
+        files: |
+          All_Packages.tar.gz
+          All_Firmwares.tar.gz
+
+    - name: Delete workflow runs
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        retain_days: 1
+        keep_minimum_runs: 2

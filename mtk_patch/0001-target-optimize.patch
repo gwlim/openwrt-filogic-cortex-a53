@@ -47,10 +47,16 @@ index cbac91c..7506bf7 100644
  		help
  		  Extra target-independent optimizations to use when building for the target.
 diff --git a/config/Config-build.in b/config/Config-build.in
-index 02931a8..de5bb57 100644
+index 41c1dac..71b61b0 100644
 --- a/config/Config-build.in
 +++ b/config/Config-build.in
-@@ -46,6 +46,7 @@ menu "Global build settings"
+@@ -41,11 +41,13 @@ menu "Global build settings"
+ 
+ 	config ALL_KMODS
+ 		bool "Select all kernel module packages by default"
++		default y
+ 
+ 	config ALL
  		bool "Select all userspace packages by default"
  		select ALL_KMODS
  		select ALL_NONSHARED
@@ -58,7 +64,7 @@ index 02931a8..de5bb57 100644
  
  	config BUILDBOT
  		bool "Set build defaults for automatic builds (e.g. via buildbot)"
-@@ -168,6 +169,7 @@ menu "Global build settings"
+@@ -168,6 +170,7 @@ menu "Global build settings"
  	config USE_LTO
  		bool
  		prompt "Use the link-time optimizer for all packages (EXPERIMENTAL)"
