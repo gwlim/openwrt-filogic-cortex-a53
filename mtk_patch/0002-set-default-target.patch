@@ -1,0 +1,44 @@
+diff --git a/scripts/target-metadata.pl b/scripts/target-metadata.pl
+index e1d4ef2..9de5c0c 100755
+--- a/scripts/target-metadata.pl
++++ b/scripts/target-metadata.pl
+@@ -179,7 +179,7 @@ EOF
+ 	print <<EOF;
+ choice
+ 	prompt "Target System"
+-	default TARGET_ath79
++	default TARGET_mediatek
+ 	reset if !DEVEL
+ 	
+ EOF
+@@ -194,6 +194,7 @@ endchoice
+ 
+ choice
+ 	prompt "Subtarget" if HAS_SUBTARGETS
++	default TARGET_mediatek_filogic
+ EOF
+ 	foreach my $target (@target) {
+ 		next unless $target->{def_subtarget};
+@@ -214,7 +215,7 @@ endchoice
+ 
+ choice
+ 	prompt "Target Profile"
+-	default TARGET_MULTI_PROFILE if BUILDBOT
++	default TARGET_MULTI_PROFILE
+ 
+ EOF
+ 	foreach my $target (@target) {
+@@ -269,11 +270,11 @@ menu "Target Devices"
+ 
+ 	config TARGET_ALL_PROFILES
+ 		bool "Enable all profiles by default"
+-		default BUILDBOT
++		default y
+ 
+ 	config TARGET_PER_DEVICE_ROOTFS
+ 		bool "Use a per-device root filesystem that adds profile packages"
+-		default BUILDBOT
++		default y
+ 		help
+ 		When disabled, all device packages from all selected devices
+ 		will be included in all images by default. (Marked as <*>) You will

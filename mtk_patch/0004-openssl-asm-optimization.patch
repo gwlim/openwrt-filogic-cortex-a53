@@ -1,0 +1,35 @@
+diff --git a/package/libs/openssl/Makefile b/package/libs/openssl/Makefile
+index 554cde7..60c89d0 100644
+--- a/package/libs/openssl/Makefile
++++ b/package/libs/openssl/Makefile
+@@ -219,7 +219,7 @@ and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerator
+ The engine_id is "padlock"
+ endef
+ 
+-OPENSSL_OPTIONS:= shared no-tests
++OPENSSL_OPTIONS:= shared no-tests threads
+ 
+ ifndef CONFIG_OPENSSL_WITH_BLAKE2
+   OPENSSL_OPTIONS += no-blake2
+
+diff --git a/package/libs/openssl/Config.in b/package/libs/openssl/Config.in
+index 871080a..7e25694 100644
+--- a/package/libs/openssl/Config.in
++++ b/package/libs/openssl/Config.in
+@@ -4,7 +4,7 @@ comment "Build Options"
+ 
+ config OPENSSL_OPTIMIZE_SPEED
+ 	bool
+-	default y if x86_64 || i386
++	default y
+ 	prompt "Enable optimization for speed instead of size"
+ 	select OPENSSL_WITH_ASM
+ 	help
+@@ -189,6 +189,7 @@ config OPENSSL_WITH_SEED
+ config OPENSSL_WITH_SM234
+ 	bool
+ 	prompt "Enable SM2/3/4 algorithms support"
++	default y
+ 	help
+ 		These algorithms are a set of "Commercial Cryptography"
+ 		algorithms approved for use in China.

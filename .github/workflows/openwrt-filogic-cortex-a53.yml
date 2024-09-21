@@ -4,6 +4,7 @@ env:
   REPO_URL: https://github.com/openwrt/openwrt.git
   REPO_BRANCH: master
   PATCH_SCRIPT: build_mtk_openwrt.sh
+  PATCH_DIR: mtk_patch
   UPLOAD_BIN_DIR: true
 
 on:
@@ -13,12 +14,11 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - name: checkout
-    - uses: actions/checkout@main
+      uses: actions/checkout@main
 
     - name: Initialization environment
       env:
@@ -42,8 +42,10 @@ jobs:
 
     - name: Patch openwrt
       run: |
+        mv $GITHUB_WORKSPACE/$PATCH_DIR $GITHUB_WORKSPACE/openwrt
+        mv $GITHUB_WORKSPACE/$PATCH_SCRIPT $GITHUB_WORKSPACE/openwrt
+        cd $GITHUB_WORKSPACE/openwrt
         chmod +x $PATCH_SCRIPT
-        cd openwrt
         $GITHUB_WORKSPACE/$PATCH_SCRIPT
 
     - name: Download package
@@ -65,23 +67,3 @@ jobs:
 
     - name: Upload bin directory
       uses: actions/upload-artifact@main
-
-    - name: Upload firmware to release
-      uses: softprops/action-gh-release@master
-      if: steps.tag.outputs.status == 'success' && !cancelled()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.release_tag }}
-        body_path: release.txt
-        files: ${{ env.FIRMWARE }}/*
-
-    - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@main
-      with:
-        retain_days: 0
-        keep_minimum_runs: 2
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
-      with:
-        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: openwrt/bin

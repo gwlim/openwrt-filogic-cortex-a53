@@ -1,0 +1,631 @@
+--- a/dev/null	2024-09-12 13:27:00.930999908 +0800
++++ b/toolchain/musl/patches/902-glibc-aarch64-memmove.patch	2024-09-14 20:19:24.545228086 +0800
+@@ -0,0 +1,422 @@
++--- a/src/string/aarch64/memcpy.S	2024-03-01 10:07:33.000000000 +0800
+++++ b/src/string/aarch64/memcpy.S	2024-09-14 15:55:43.209627697 +0800
++@@ -1,186 +1,238 @@
++-/*
++- * memcpy - copy memory area
++- *
++- * Copyright (c) 2012-2020, Arm Limited.
++- * SPDX-License-Identifier: MIT
++- */
+++/* Generic optimized memcpy using SIMD.
+++   Copyright (C) 2012-2024 Free Software Foundation, Inc.
+++
+++   This file is part of the GNU C Library.
+++
+++   The GNU C Library is free software; you can redistribute it and/or
+++   modify it under the terms of the GNU Lesser General Public
+++   License as published by the Free Software Foundation; either
+++   version 2.1 of the License, or (at your option) any later version.
+++
+++   The GNU C Library is distributed in the hope that it will be useful,
+++   but WITHOUT ANY WARRANTY; without even the implied warranty of
+++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+++   Lesser General Public License for more details.
+++
+++   You should have received a copy of the GNU Lesser General Public
+++   License along with the GNU C Library.  If not, see
+++   <https://www.gnu.org/licenses/>.  */
++ 
++ /* Assumptions:
++  *
++- * ARMv8-a, AArch64, unaligned accesses.
+++ * ARMv8-a, AArch64, Advanced SIMD, unaligned accesses.
++  *
++  */
++ 
++-#define dstin   x0
++-#define src     x1
++-#define count   x2
++-#define dst     x3
++-#define srcend  x4
++-#define dstend  x5
++-#define A_l     x6
++-#define A_lw    w6
++-#define A_h     x7
++-#define B_l     x8
++-#define B_lw    w8
++-#define B_h     x9
++-#define C_l     x10
++-#define C_lw    w10
++-#define C_h     x11
++-#define D_l     x12
++-#define D_h     x13
++-#define E_l     x14
++-#define E_h     x15
++-#define F_l     x16
++-#define F_h     x17
++-#define G_l     count
++-#define G_h     dst
++-#define H_l     src
++-#define H_h     srcend
++-#define tmp1    x14
++-
++-/* This implementation of memcpy uses unaligned accesses and branchless
++-   sequences to keep the code small, simple and improve performance.
+++#define dstin	x0
+++#define src	x1
+++#define count	x2
+++#define dst	x3
+++#define srcend	x4
+++#define dstend	x5
+++#define A_l	x6
+++#define A_lw	w6
+++#define A_h	x7
+++#define B_l	x8
+++#define B_lw	w8
+++#define B_h	x9
+++#define C_lw	w10
+++#define tmp1	x14
+++
+++#define A_q	q0
+++#define B_q	q1
+++#define C_q	q2
+++#define D_q	q3
+++#define E_q	q4
+++#define F_q	q5
+++#define G_q	q6
+++#define H_q	q7
+++
+++/* This implementation supports both memcpy and memmove and shares most code.
+++   It uses unaligned accesses and branchless sequences to keep the code small,
+++   simple and improve performance.
++ 
++    Copies are split into 3 main cases: small copies of up to 32 bytes, medium
++    copies of up to 128 bytes, and large copies.  The overhead of the overlap
++-   check is negligible since it is only required for large copies.
+++   check in memmove is negligible since it is only required for large copies.
++ 
++-   Large copies use a software pipelined loop processing 64 bytes per iteration.
++-   The destination pointer is 16-byte aligned to minimize unaligned accesses.
++-   The loop tail is handled by always copying 64 bytes from the end.
++-*/
+++   Large copies use a software pipelined loop processing 64 bytes per
+++   iteration.  The destination pointer is 16-byte aligned to minimize
+++   unaligned accesses.  The loop tail is handled by always copying 64 bytes
+++   from the end.  */
++ 
++ .global memcpy
+++.global memmove
+++
++ .type memcpy,%function
+++.type memmove,%function
+++
++ memcpy:
++-	add     srcend, src, count
++-	add     dstend, dstin, count
++-	cmp     count, 128
++-	b.hi    .Lcopy_long
++-	cmp     count, 32
++-	b.hi    .Lcopy32_128
+++	add	srcend, src, count
+++	add	dstend, dstin, count
+++	cmp	count, 128
+++	b.hi	.Lcopy_long
+++	cmp	count, 32
+++	b.hi	.Lcopy32_128
++ 
++ 	/* Small copies: 0..32 bytes.  */
++-	cmp     count, 16
++-	b.lo    .Lcopy16
++-	ldp     A_l, A_h, [src]
++-	ldp     D_l, D_h, [srcend, -16]
++-	stp     A_l, A_h, [dstin]
++-	stp     D_l, D_h, [dstend, -16]
+++	cmp	count, 16
+++	b.lo	.Lcopy16
+++	ldr	A_q, [src]
+++	ldr	B_q, [srcend, -16]
+++	str	A_q, [dstin]
+++	str	B_q, [dstend, -16]
++ 	ret
++ 
++ 	/* Copy 8-15 bytes.  */
++ .Lcopy16:
++-	tbz     count, 3, .Lcopy8
++-	ldr     A_l, [src]
++-	ldr     A_h, [srcend, -8]
++-	str     A_l, [dstin]
++-	str     A_h, [dstend, -8]
+++	tbz	count, 3, .Lcopy8
+++	ldr	A_l, [src]
+++	ldr	A_h, [srcend, -8]
+++	str	A_l, [dstin]
+++	str	A_h, [dstend, -8]
++ 	ret
++ 
++-	.p2align 3
++ 	/* Copy 4-7 bytes.  */
++ .Lcopy8:
++-	tbz     count, 2, .Lcopy4
++-	ldr     A_lw, [src]
++-	ldr     B_lw, [srcend, -4]
++-	str     A_lw, [dstin]
++-	str     B_lw, [dstend, -4]
+++	tbz	count, 2, .Lcopy4
+++	ldr	A_lw, [src]
+++	ldr	B_lw, [srcend, -4]
+++	str	A_lw, [dstin]
+++	str	B_lw, [dstend, -4]
++ 	ret
++ 
++ 	/* Copy 0..3 bytes using a branchless sequence.  */
++ .Lcopy4:
++-	cbz     count, .Lcopy0
++-	lsr     tmp1, count, 1
++-	ldrb    A_lw, [src]
++-	ldrb    C_lw, [srcend, -1]
++-	ldrb    B_lw, [src, tmp1]
++-	strb    A_lw, [dstin]
++-	strb    B_lw, [dstin, tmp1]
++-	strb    C_lw, [dstend, -1]
+++	cbz	count, .Lcopy0
+++	lsr	tmp1, count, 1
+++	ldrb	A_lw, [src]
+++	ldrb	C_lw, [srcend, -1]
+++	ldrb	B_lw, [src, tmp1]
+++	strb	A_lw, [dstin]
+++	strb	B_lw, [dstin, tmp1]
+++	strb	C_lw, [dstend, -1]
++ .Lcopy0:
++ 	ret
++ 
++ 	.p2align 4
++ 	/* Medium copies: 33..128 bytes.  */
++ .Lcopy32_128:
++-	ldp     A_l, A_h, [src]
++-	ldp     B_l, B_h, [src, 16]
++-	ldp     C_l, C_h, [srcend, -32]
++-	ldp     D_l, D_h, [srcend, -16]
++-	cmp     count, 64
++-	b.hi    .Lcopy128
++-	stp     A_l, A_h, [dstin]
++-	stp     B_l, B_h, [dstin, 16]
++-	stp     C_l, C_h, [dstend, -32]
++-	stp     D_l, D_h, [dstend, -16]
+++	ldp	A_q, B_q, [src]
+++	ldp	C_q, D_q, [srcend, -32]
+++	cmp	count, 64
+++	b.hi	.Lcopy128
+++	stp	A_q, B_q, [dstin]
+++	stp	C_q, D_q, [dstend, -32]
++ 	ret
++ 
++ 	.p2align 4
++ 	/* Copy 65..128 bytes.  */
++ .Lcopy128:
++-	ldp     E_l, E_h, [src, 32]
++-	ldp     F_l, F_h, [src, 48]
++-	cmp     count, 96
++-	b.ls    .Lcopy96
++-	ldp     G_l, G_h, [srcend, -64]
++-	ldp     H_l, H_h, [srcend, -48]
++-	stp     G_l, G_h, [dstend, -64]
++-	stp     H_l, H_h, [dstend, -48]
+++	ldp	E_q, F_q, [src, 32]
+++	cmp	count, 96
+++	b.ls	.Lcopy96
+++	ldp	G_q, H_q, [srcend, -64]
+++	stp	G_q, H_q, [dstend, -64]
++ .Lcopy96:
++-	stp     A_l, A_h, [dstin]
++-	stp     B_l, B_h, [dstin, 16]
++-	stp     E_l, E_h, [dstin, 32]
++-	stp     F_l, F_h, [dstin, 48]
++-	stp     C_l, C_h, [dstend, -32]
++-	stp     D_l, D_h, [dstend, -16]
+++	stp	A_q, B_q, [dstin]
+++	stp	E_q, F_q, [dstin, 32]
+++	stp	C_q, D_q, [dstend, -32]
++ 	ret
++ 
++-	.p2align 4
+++	/* Align loop64 below to 16 bytes.  */
+++	nop
+++
++ 	/* Copy more than 128 bytes.  */
++ .Lcopy_long:
++-
++-	/* Copy 16 bytes and then align dst to 16-byte alignment.  */
++-
++-	ldp     D_l, D_h, [src]
++-	and     tmp1, dstin, 15
++-	bic     dst, dstin, 15
++-	sub     src, src, tmp1
++-	add     count, count, tmp1      /* Count is now 16 too large.  */
++-	ldp     A_l, A_h, [src, 16]
++-	stp     D_l, D_h, [dstin]
++-	ldp     B_l, B_h, [src, 32]
++-	ldp     C_l, C_h, [src, 48]
++-	ldp     D_l, D_h, [src, 64]!
++-	subs    count, count, 128 + 16  /* Test and readjust count.  */
++-	b.ls    .Lcopy64_from_end
++-
+++	/* Copy 16 bytes and then align src to 16-byte alignment.  */
+++	ldr	D_q, [src]
+++	and	tmp1, src, 15
+++	bic	src, src, 15
+++	sub	dst, dstin, tmp1
+++	add	count, count, tmp1	/* Count is now 16 too large.  */
+++	ldp	A_q, B_q, [src, 16]
+++	str	D_q, [dstin]
+++	ldp	C_q, D_q, [src, 48]
+++	subs	count, count, 128 + 16	/* Test and readjust count.  */
+++	b.ls	.Lcopy64_from_end
++ .Lloop64:
++-	stp     A_l, A_h, [dst, 16]
++-	ldp     A_l, A_h, [src, 16]
++-	stp     B_l, B_h, [dst, 32]
++-	ldp     B_l, B_h, [src, 32]
++-	stp     C_l, C_h, [dst, 48]
++-	ldp     C_l, C_h, [src, 48]
++-	stp     D_l, D_h, [dst, 64]!
++-	ldp     D_l, D_h, [src, 64]!
++-	subs    count, count, 64
++-	b.hi    .Lloop64
+++	stp	A_q, B_q, [dst, 16]
+++	ldp	A_q, B_q, [src, 80]
+++	stp	C_q, D_q, [dst, 48]
+++	ldp	C_q, D_q, [src, 112]
+++	add	src, src, 64
+++	add	dst, dst, 64
+++	subs	count, count, 64
+++	b.hi	.Lloop64
++ 
++ 	/* Write the last iteration and copy 64 bytes from the end.  */
++ .Lcopy64_from_end:
++-	ldp     E_l, E_h, [srcend, -64]
++-	stp     A_l, A_h, [dst, 16]
++-	ldp     A_l, A_h, [srcend, -48]
++-	stp     B_l, B_h, [dst, 32]
++-	ldp     B_l, B_h, [srcend, -32]
++-	stp     C_l, C_h, [dst, 48]
++-	ldp     C_l, C_h, [srcend, -16]
++-	stp     D_l, D_h, [dst, 64]
++-	stp     E_l, E_h, [dstend, -64]
++-	stp     A_l, A_h, [dstend, -48]
++-	stp     B_l, B_h, [dstend, -32]
++-	stp     C_l, C_h, [dstend, -16]
+++	ldp	E_q, F_q, [srcend, -64]
+++	stp	A_q, B_q, [dst, 16]
+++	ldp	A_q, B_q, [srcend, -32]
+++	stp	C_q, D_q, [dst, 48]
+++	stp	E_q, F_q, [dstend, -64]
+++	stp	A_q, B_q, [dstend, -32]
+++	ret
+++
+++memmove:
+++
+++	add	srcend, src, count
+++	add	dstend, dstin, count
+++	cmp	count, 128
+++	b.hi	.Lmove_long
+++	cmp	count, 32
+++	b.hi	.Lcopy32_128
+++
+++	/* Small moves: 0..32 bytes.  */
+++	cmp	count, 16
+++	b.lo	.Lcopy16
+++	ldr	A_q, [src]
+++	ldr	B_q, [srcend, -16]
+++	str	A_q, [dstin]
+++	str	B_q, [dstend, -16]
+++	ret
+++
+++.Lmove_long:
+++	/* Only use backward copy if there is an overlap.  */
+++	sub	tmp1, dstin, src
+++	cbz	tmp1, .Lmove0
+++	cmp	tmp1, count
+++	b.hs	.Lcopy_long
+++
+++	/* Large backwards copy for overlapping copies.
+++	   Copy 16 bytes and then align srcend to 16-byte alignment.  */
+++.Lcopy_long_backwards:
+++	ldr	D_q, [srcend, -16]
+++	and	tmp1, srcend, 15
+++	bic	srcend, srcend, 15
+++	sub	count, count, tmp1
+++	ldp	A_q, B_q, [srcend, -32]
+++	str	D_q, [dstend, -16]
+++	ldp	C_q, D_q, [srcend, -64]
+++	sub	dstend, dstend, tmp1
+++	subs	count, count, 128
+++	b.ls	.Lcopy64_from_start
+++
+++.Lloop64_backwards:
+++	str	B_q, [dstend, -16]
+++	str	A_q, [dstend, -32]
+++	ldp	A_q, B_q, [srcend, -96]
+++	str	D_q, [dstend, -48]
+++	str	C_q, [dstend, -64]!
+++	ldp	C_q, D_q, [srcend, -128]
+++	sub	srcend, srcend, 64
+++	subs	count, count, 64
+++	b.hi	.Lloop64_backwards
+++
+++	/* Write the last iteration and copy 64 bytes from the start.  */
+++.Lcopy64_from_start:
+++	ldp	E_q, F_q, [src, 32]
+++	stp	A_q, B_q, [dstend, -32]
+++	ldp	A_q, B_q, [src]
+++	stp	C_q, D_q, [dstend, -64]
+++	stp	E_q, F_q, [dstin, 32]
+++	stp	A_q, B_q, [dstin]
+++.Lmove0:
++ 	ret
++ 
++-.size memcpy,.-memcpy
++--- a/src/string/memmove.c	2024-03-01 10:07:33.000000000 +0800
+++++ b/dev/null	2024-09-12 13:27:00.930999908 +0800
++@@ -1,42 +0,0 @@
++-#include <string.h>
++-#include <stdint.h>
++-
++-#ifdef __GNUC__
++-typedef __attribute__((__may_alias__)) size_t WT;
++-#define WS (sizeof(WT))
++-#endif
++-
++-void *memmove(void *dest, const void *src, size_t n)
++-{
++-	char *d = dest;
++-	const char *s = src;
++-
++-	if (d==s) return d;
++-	if ((uintptr_t)s-(uintptr_t)d-n <= -2*n) return memcpy(d, s, n);
++-
++-	if (d<s) {
++-#ifdef __GNUC__
++-		if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
++-			while ((uintptr_t)d % WS) {
++-				if (!n--) return dest;
++-				*d++ = *s++;
++-			}
++-			for (; n>=WS; n-=WS, d+=WS, s+=WS) *(WT *)d = *(WT *)s;
++-		}
++-#endif
++-		for (; n; n--) *d++ = *s++;
++-	} else {
++-#ifdef __GNUC__
++-		if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
++-			while ((uintptr_t)(d+n) % WS) {
++-				if (!n--) return dest;
++-				d[n] = s[n];
++-			}
++-			while (n>=WS) n-=WS, *(WT *)(d+n) = *(WT *)(s+n);
++-		}
++-#endif
++-		while (n) n--, d[n] = s[n];
++-	}
++-
++-	return dest;
++-}
+--- a/dev/null	2024-09-14 23:14:06.054999941 +0800
++++ b/toolchain/musl/patches/903-glibc-aarch64-memset.patch	2024-09-15 14:44:11.771495514 +0800
+@@ -0,0 +1,203 @@
++--- a/src/string/aarch64/memset.S.orig	2024-09-15 14:42:42.293938366 +0800
+++++ b/src/string/aarch64/memset.S	2024-09-15 14:42:44.476821512 +0800
++@@ -1,8 +1,8 @@
++ /*
++  * memset - fill memory with a constant byte
++  *
++- * Copyright (c) 2012-2020, Arm Limited.
++- * SPDX-License-Identifier: MIT
+++ * Copyright (c) 2012-2024, Arm Limited.
+++ * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
++  */
++ 
++ /* Assumptions:
++@@ -11,105 +11,110 @@
++  *
++  */
++ 
++-#define dstin   x0
++-#define val     x1
++-#define valw    w1
++-#define count   x2
++-#define dst     x3
++-#define dstend  x4
++-#define zva_val x5
+++#define dstin	x0
+++#define val	x1
+++#define valw	w1
+++#define count	x2
+++#define dst	x3
+++#define dstend	x4
+++#define zva_val	x5
+++#define off	x3
+++#define dstend2	x5
++ 
++ .global memset
++ .type memset,%function
++ memset:
+++	dup	v0.16B, valw
+++	cmp	count, 16
+++	b.lo	.Lset_small
+++
+++	add	dstend, dstin, count
+++	cmp	count, 64
+++	b.hs	.Lset_128
+++
+++	/* Set 16..63 bytes.  */
+++	mov	off, 16
+++	and	off, off, count, lsr 1
+++	sub	dstend2, dstend, off
+++	str	q0, [dstin]
+++	str	q0, [dstin, off]
+++	str	q0, [dstend2, -16]
+++	str	q0, [dstend, -16]
+++	ret
++ 
++-	dup     v0.16B, valw
++-	add     dstend, dstin, count
++-
++-	cmp     count, 96
++-	b.hi    .Lset_long
++-	cmp     count, 16
++-	b.hs    .Lset_medium
++-	mov     val, v0.D[0]
++-
+++	.p2align 4
++ 	/* Set 0..15 bytes.  */
++-	tbz     count, 3, 1f
++-	str     val, [dstin]
++-	str     val, [dstend, -8]
+++.Lset_small:
+++	add	dstend, dstin, count
+++	cmp	count, 4
+++	b.lo	2f
+++	lsr	off, count, 3
+++	sub	dstend2, dstend, off, lsl 2
+++	str	s0, [dstin]
+++	str	s0, [dstin, off, lsl 2]
+++	str	s0, [dstend2, -4]
+++	str	s0, [dstend, -4]
++ 	ret
++-	nop
++-1:      tbz     count, 2, 2f
++-	str     valw, [dstin]
++-	str     valw, [dstend, -4]
++-	ret
++-2:      cbz     count, 3f
++-	strb    valw, [dstin]
++-	tbz     count, 1, 3f
++-	strh    valw, [dstend, -2]
++-3:      ret
++-
++-	/* Set 17..96 bytes.  */
++-.Lset_medium:
++-	str     q0, [dstin]
++-	tbnz    count, 6, .Lset96
++-	str     q0, [dstend, -16]
++-	tbz     count, 5, 1f
++-	str     q0, [dstin, 16]
++-	str     q0, [dstend, -32]
++-1:      ret
+++
+++	/* Set 0..3 bytes.  */
+++2:	cbz	count, 3f
+++	lsr	off, count, 1
+++	strb	valw, [dstin]
+++	strb	valw, [dstin, off]
+++	strb	valw, [dstend, -1]
+++3:	ret
++ 
++ 	.p2align 4
++-	/* Set 64..96 bytes.  Write 64 bytes from the start and
++-	   32 bytes from the end.  */
++-.Lset96:
++-	str     q0, [dstin, 16]
++-	stp     q0, q0, [dstin, 32]
++-	stp     q0, q0, [dstend, -32]
+++.Lset_128:
+++	bic	dst, dstin, 15
+++	cmp	count, 128
+++	b.hi	.Lset_long
+++	stp	q0, q0, [dstin]
+++	stp	q0, q0, [dstin, 32]
+++	stp	q0, q0, [dstend, -64]
+++	stp	q0, q0, [dstend, -32]
++ 	ret
++ 
++ 	.p2align 4
++ .Lset_long:
++-	and     valw, valw, 255
++-	bic     dst, dstin, 15
++-	str     q0, [dstin]
++-	cmp     count, 160
++-	ccmp    valw, 0, 0, hs
++-	b.ne    .Lno_zva
++-
+++	str	q0, [dstin]
+++	str	q0, [dst, 16]
+++	tst	valw, 255
+++	b.ne	.Lno_zva
++ #ifndef SKIP_ZVA_CHECK
++-	mrs     zva_val, dczid_el0
++-	and     zva_val, zva_val, 31
++-	cmp     zva_val, 4              /* ZVA size is 64 bytes.  */
++-	b.ne    .Lno_zva
+++	mrs	zva_val, dczid_el0
+++	and	zva_val, zva_val, 31
+++	cmp	zva_val, 4		/* ZVA size is 64 bytes.  */
+++	b.ne	.Lno_zva
++ #endif
++-	str     q0, [dst, 16]
++-	stp     q0, q0, [dst, 32]
++-	bic     dst, dst, 63
++-	sub     count, dstend, dst      /* Count is now 64 too large.  */
++-	sub     count, count, 128       /* Adjust count and bias for loop.  */
+++	stp	q0, q0, [dst, 32]
+++	bic	dst, dstin, 63
+++	sub	count, dstend, dst	/* Count is now 64 too large.  */
+++	sub	count, count, 64 + 64	/* Adjust count and bias for loop.  */
+++
+++	/* Write last bytes before ZVA loop.  */
+++	stp	q0, q0, [dstend, -64]
+++	stp	q0, q0, [dstend, -32]
++ 
++ 	.p2align 4
++-.Lzva_loop:
++-	add     dst, dst, 64
++-	dc      zva, dst
++-	subs    count, count, 64
++-	b.hi    .Lzva_loop
++-	stp     q0, q0, [dstend, -64]
++-	stp     q0, q0, [dstend, -32]
+++.Lzva64_loop:
+++	add	dst, dst, 64
+++	dc	zva, dst
+++	subs	count, count, 64
+++	b.hi	.Lzva64_loop
++ 	ret
++ 
+++	.p2align 3
++ .Lno_zva:
++-	sub     count, dstend, dst      /* Count is 16 too large.  */
++-	sub     dst, dst, 16            /* Dst is biased by -32.  */
++-	sub     count, count, 64 + 16   /* Adjust count and bias for loop.  */
+++	sub	count, dstend, dst	/* Count is 32 too large.  */
+++	sub	count, count, 64 + 32	/* Adjust count and bias for loop.  */
++ .Lno_zva_loop:
++-	stp     q0, q0, [dst, 32]
++-	stp     q0, q0, [dst, 64]!
++-	subs    count, count, 64
++-	b.hi    .Lno_zva_loop
++-	stp     q0, q0, [dstend, -64]
++-	stp     q0, q0, [dstend, -32]
+++	stp	q0, q0, [dst, 32]
+++	stp	q0, q0, [dst, 64]
+++	add	dst, dst, 64
+++	subs	count, count, 64
+++	b.hi	.Lno_zva_loop
+++	stp	q0, q0, [dstend, -64]
+++	stp	q0, q0, [dstend, -32]
++ 	ret
++ 
++-.size memset,.-memset
++-
