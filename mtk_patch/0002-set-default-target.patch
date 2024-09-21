@@ -24,7 +24,7 @@ index e1d4ef2..9de5c0c 100755
  choice
  	prompt "Target Profile"
 -	default TARGET_MULTI_PROFILE if BUILDBOT
-+	default TARGET_MULTI_PROFILE
++	default TARGET_mediatek_filogic_DEVICE_openwrt_device_model_config
  
  EOF
  	foreach my $target (@target) {
@@ -33,7 +33,7 @@ index e1d4ef2..9de5c0c 100755
  	config TARGET_ALL_PROFILES
  		bool "Enable all profiles by default"
 -		default BUILDBOT
-+		default y
++		default n
  
  	config TARGET_PER_DEVICE_ROOTFS
  		bool "Use a per-device root filesystem that adds profile packages"

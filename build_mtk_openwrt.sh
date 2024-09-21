@@ -1,9 +1,8 @@
 #! /bin/bash
 
-git clone --depth=1 https://github.com/openwrt/openwrt.git
+cp -R mtk_patch ./openwrt/patches
 
-sed -i 's/git.openwrt.org\/feed/github.com\/openwrt/g' ./feeds.conf.default
-sed -i 's/git.openwrt.org\/project/github.com\/openwrt/g' ./feeds.conf.default
+cd ./openwrt
 
 sed -i 's/wpad-basic-mbedtls/wpad-basic-openssl/g' ./target/linux/mediatek/filogic/target.mk
 sed -i 's/# CONFIG_CRYPTO_DEV_SAFEXCEL is not set/CONFIG_CRYPTO_DEV_SAFEXCEL=y/' ./target/linux/generic/config-6.6
@@ -27,9 +26,9 @@ sed -i 's/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/' ./target/linux/generic/co
 sed -i 's/CONFIG_HZ=100/CONFIG_HZ=250/' ./target/linux/generic/config-6.6
 sed -i 's/# CONFIG_DEBUG_INFO_REDUCED is not set/CONFIG_DEBUG_INFO_REDUCED=y/' ./target/linux/generic/config-6.6
 
-for i in $(ls mtk_patch)
+for i in $(ls patches)
 do
-    git apply mtk_patch/$i
+    git apply patches/$i
 done
 
 ./scripts/feeds update -a
@@ -39,6 +38,5 @@ done
 make defconfig
 
 sed -i 's/# CONFIG_LUCI_SRCDIET is not set/CONFIG_LUCI_SRCDIET=y/' .config
-sed -i 's/CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_mediatek_mt7988a-rfb=y/# CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_mediatek_mt7988a-rfb is not set/' .config
-sed -i 's/CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_bananapi_bpi-r4=y/# CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_bananapi_bpi-r4 is not set/' .config
-sed -i 's/CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_bananapi_bpi-r4-poe=y/# CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_bananapi_bpi-r4-poe is not set/' .config
+
+rm -rf ./openwrt/patches
