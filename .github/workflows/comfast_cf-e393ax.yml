@@ -2,7 +2,7 @@ name: Build comfast_cf-e393ax
 
 on:
   schedule:
-    - cron: 0 22 * * MON
+    - cron: 0 22 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

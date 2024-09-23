@@ -2,7 +2,7 @@ name: Build acer_predator-w6
 
 on:
   schedule:
-    - cron: 0 6 * * MON
+    - cron: 0 6 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

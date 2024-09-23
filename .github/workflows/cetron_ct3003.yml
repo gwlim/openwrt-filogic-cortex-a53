@@ -2,7 +2,7 @@ name: Build cetron_ct3003
 
 on:
   schedule:
-    - cron: 0 18 * * MON
+    - cron: 0 18 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

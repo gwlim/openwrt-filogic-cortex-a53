@@ -2,7 +2,7 @@ name: Build unielec_u7981-01-nand
 
 on:
   schedule:
-    - cron: 0 12 * * FRI
+    - cron: 0 12 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

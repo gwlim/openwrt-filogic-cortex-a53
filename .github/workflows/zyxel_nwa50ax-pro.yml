@@ -2,7 +2,7 @@ name: Build zyxel_nwa50ax-pro
 
 on:
   schedule:
-    - cron: 0 18 * * SAT
+    - cron: 0 18 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

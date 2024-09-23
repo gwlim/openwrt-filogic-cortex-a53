@@ -2,7 +2,7 @@ name: Build ruijie_rg-x60-pro
 
 on:
   schedule:
-    - cron: 0 6 * * THU
+    - cron: 0 6 4 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

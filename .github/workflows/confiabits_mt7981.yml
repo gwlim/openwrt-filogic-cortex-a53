@@ -2,7 +2,7 @@ name: Build confiabits_mt7981
 
 on:
   schedule:
-    - cron: 0 0 * * TUE
+    - cron: 0 0 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

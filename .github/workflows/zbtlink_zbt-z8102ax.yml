@@ -2,7 +2,7 @@ name: Build zbtlink_zbt-z8102ax
 
 on:
   schedule:
-    - cron: 0 8 * * SAT
+    - cron: 0 8 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

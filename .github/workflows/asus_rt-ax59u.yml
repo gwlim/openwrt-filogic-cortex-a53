@@ -2,7 +2,7 @@ name: Build asus_rt-ax59u
 
 on:
   schedule:
-    - cron: 0 8 * * MON
+    - cron: 0 8 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

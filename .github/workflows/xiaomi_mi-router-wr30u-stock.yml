@@ -2,7 +2,7 @@ name: Build xiaomi_mi-router-wr30u-stock
 
 on:
   schedule:
-    - cron: 0 22 * * FRI
+    - cron: 0 22 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

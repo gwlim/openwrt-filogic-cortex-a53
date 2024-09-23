@@ -2,7 +2,7 @@ name: Build xiaomi_mi-router-ax3000t
 
 on:
   schedule:
-    - cron: 0 20 * * FRI
+    - cron: 0 20 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

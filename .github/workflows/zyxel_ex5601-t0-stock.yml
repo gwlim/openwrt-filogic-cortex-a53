@@ -2,7 +2,7 @@ name: Build zyxel_ex5601-t0-stock
 
 on:
   schedule:
-    - cron: 0 12 * * SAT
+    - cron: 0 12 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

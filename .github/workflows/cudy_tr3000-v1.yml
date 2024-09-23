@@ -2,7 +2,7 @@ name: Build cudy_tr3000-v1
 
 on:
   schedule:
-    - cron: 0 8 * * TUE
+    - cron: 0 8 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

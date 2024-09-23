@@ -2,7 +2,7 @@ name: Build zyxel_ex5700-telenor
 
 on:
   schedule:
-    - cron: 0 16 * * SAT
+    - cron: 0 16 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

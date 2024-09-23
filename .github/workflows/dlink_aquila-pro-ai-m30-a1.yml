@@ -2,7 +2,7 @@ name: Build dlink_aquila-pro-ai-m30-a1
 
 on:
   schedule:
-    - cron: 0 12 * * TUE
+    - cron: 0 12 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

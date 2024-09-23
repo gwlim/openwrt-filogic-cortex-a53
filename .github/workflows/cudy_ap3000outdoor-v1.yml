@@ -2,7 +2,7 @@ name: Build cudy_ap3000outdoor-v1
 
 on:
   schedule:
-    - cron: 0 2 * * TUE
+    - cron: 0 2 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

@@ -2,7 +2,7 @@ name: Build tplink_tl-xtr8488
 
 on:
   schedule:
-    - cron: 0 6 * * FRI
+    - cron: 0 6 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

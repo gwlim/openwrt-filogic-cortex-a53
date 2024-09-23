@@ -2,7 +2,7 @@ name: Build ubnt_unifi-6-plus
 
 on:
   schedule:
-    - cron: 0 8 * * FRI
+    - cron: 0 8 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

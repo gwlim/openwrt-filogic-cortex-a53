@@ -2,7 +2,7 @@ name: Build mediatek_mt7986b-rfb
 
 on:
   schedule:
-    - cron: 0 12 * * WED
+    - cron: 0 12 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

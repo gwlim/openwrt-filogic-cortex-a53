@@ -2,7 +2,7 @@ name: Build jcg_q30-pro
 
 on:
   schedule:
-    - cron: 0 4 * * WED
+    - cron: 0 4 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

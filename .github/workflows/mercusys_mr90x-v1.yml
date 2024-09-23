@@ -2,7 +2,7 @@ name: Build mercusys_mr90x-v1
 
 on:
   schedule:
-    - cron: 0 14 * * WED
+    - cron: 0 14 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

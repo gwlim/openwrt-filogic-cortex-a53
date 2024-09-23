@@ -2,7 +2,7 @@ name: Build wavlink_wl-wn586x3
 
 on:
   schedule:
-    - cron: 0 16 * * FRI
+    - cron: 0 16 5 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

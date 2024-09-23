@@ -2,7 +2,7 @@ name: Build cudy_wr3000-v1
 
 on:
   schedule:
-    - cron: 0 10 * * TUE
+    - cron: 0 10 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

@@ -2,7 +2,7 @@ name: Build acelink_ew-7886cax
 
 on:
   schedule:
-    - cron: 0 4 * * MON
+    - cron: 0 4 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

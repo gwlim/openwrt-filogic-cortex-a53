@@ -2,7 +2,7 @@ name: Build netgear_wax220
 
 on:
   schedule:
-    - cron: 0 18 * * WED
+    - cron: 0 18 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

@@ -2,7 +2,7 @@ name: Build nokia_ea0326gmp
 
 on:
   schedule:
-    - cron: 0 20 * * WED
+    - cron: 0 20 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

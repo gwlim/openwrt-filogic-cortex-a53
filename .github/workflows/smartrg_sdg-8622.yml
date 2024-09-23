@@ -2,7 +2,7 @@ name: Build smartrg_sdg-8622
 
 on:
   schedule:
-    - cron: 0 12 * * THU
+    - cron: 0 12 4 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

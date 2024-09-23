@@ -2,7 +2,7 @@ name: Build bananapi_bpi-r3-mini
 
 on:
   schedule:
-    - cron: 0 14 * * MON
+    - cron: 0 14 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

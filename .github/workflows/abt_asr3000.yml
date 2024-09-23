@@ -2,7 +2,7 @@ name: Build abt_asr3000
 
 on:
   schedule:
-    - cron: 0 2 * * MON
+    - cron: 0 2 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

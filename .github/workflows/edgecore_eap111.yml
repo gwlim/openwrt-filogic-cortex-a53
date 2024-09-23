@@ -2,7 +2,7 @@ name: Build edgecore_eap111
 
 on:
   schedule:
-    - cron: 0 14 * * TUE
+    - cron: 0 14 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

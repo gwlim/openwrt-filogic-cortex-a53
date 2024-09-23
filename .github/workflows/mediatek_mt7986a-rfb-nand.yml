@@ -2,7 +2,7 @@ name: Build mediatek_mt7986a-rfb-nand
 
 on:
   schedule:
-    - cron: 0 10 * * WED
+    - cron: 0 10 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

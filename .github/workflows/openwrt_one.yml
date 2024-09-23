@@ -2,7 +2,7 @@ name: Build openwrt_one
 
 on:
   schedule:
-    - cron: 0 0 * * THU
+    - cron: 0 0 4 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

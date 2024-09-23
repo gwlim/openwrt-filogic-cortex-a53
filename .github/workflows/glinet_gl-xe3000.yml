@@ -2,7 +2,7 @@ name: Build glinet_gl-xe3000
 
 on:
   schedule:
-    - cron: 0 0 * * WED
+    - cron: 0 0 3 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

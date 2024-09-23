@@ -2,7 +2,7 @@ name: Build qihoo_360t7
 
 on:
   schedule:
-    - cron: 0 2 * * THU
+    - cron: 0 2 4 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

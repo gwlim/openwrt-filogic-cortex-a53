@@ -2,7 +2,7 @@ name: Build zyxel_ex5601-t0-ubootmod
 
 on:
   schedule:
-    - cron: 0 14 * * SAT
+    - cron: 0 14 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

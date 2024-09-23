@@ -2,7 +2,7 @@ name: Build cmcc_rax3000m
 
 on:
   schedule:
-    - cron: 0 20 * * MON
+    - cron: 0 20 1 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

@@ -2,7 +2,7 @@ name: Build glinet_gl-mt3000
 
 on:
   schedule:
-    - cron: 0 18 * * TUE
+    - cron: 0 18 2 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:

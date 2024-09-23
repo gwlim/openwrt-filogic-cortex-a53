@@ -2,7 +2,7 @@ name: Build yuncore_ax835
 
 on:
   schedule:
-    - cron: 0 6 * * SAT
+    - cron: 0 6 6 * *
   repository_dispatch:
   workflow_dispatch:
     inputs:
